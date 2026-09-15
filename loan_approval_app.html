@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Loan Approval Desk</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --navy-950:#0A1930;
+    --navy-900:#0F2340;
+    --navy-800:#16304F;
+    --navy-700:#1F3F63;
+    --paper:#F6F1E4;
+    --paper-line:#DCD3B8;
+    --gold:#C69A3E;
+    --gold-bright:#E4B85B;
+    --ink:#1A1A16;
+    --muted:#9FB0C4;
+    --green:#2E7D5B;
+    --red:#B0473B;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--navy-950);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(198,154,62,0.08), transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(198,154,62,0.06), transparent 45%);
+    color:var(--paper);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    padding:38px 20px 60px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+
+  header{margin-bottom:28px;}
+  .eyebrow{color:var(--gold-bright);font-size:13px;letter-spacing:0.02em;margin-bottom:8px;}
+  h1{
+    font-family:'Source Serif 4',Georgia,serif;
+    font-weight:700;
+    font-size:40px;
+    line-height:1.1;
+    margin:0 0 10px;
+    color:#FBF8F0;
+  }
+  .sub{color:var(--muted);font-size:15.5px;max-width:640px;line-height:1.55;}
+
+  .samples{
+    margin-top:26px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+  }
+  .sample-chip{
+    background:var(--navy-800);
+    border:1px solid var(--navy-700);
+    color:var(--paper);
+    padding:8px 14px;
+    border-radius:7px;
+    font-size:13px;
+    cursor:pointer;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .sample-chip:hover{background:var(--navy-700);border-color:var(--gold);}
+  .sample-chip .tag{
+    font-size:10.5px;
+    padding:1px 6px;
+    border-radius:4px;
+    margin-left:7px;
+  }
+  .tag.appr{background:rgba(46,125,91,0.25);color:#7FD9AE;}
+  .tag.rej{background:rgba(176,71,59,0.25);color:#F0A99B;}
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap:26px;
+    margin-top:30px;
+    align-items:start;
+  }
+  @media (max-width: 860px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--navy-900);
+    border:1px solid var(--navy-700);
+    border-radius:10px;
+    padding:26px 26px 22px;
+  }
+  .panel h2{
+    font-family:'Source Serif 4',Georgia,serif;
+    font-size:20px;
+    margin:0 0 18px;
+    color:#FBF8F0;
+    font-weight:600;
+  }
+
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field.full{grid-column:1 / -1;}
+  label{font-size:12.5px;color:var(--muted);}
+  select, input{
+    background:var(--navy-800);
+    border:1px solid var(--navy-700);
+    color:var(--paper);
+    padding:10px 11px;
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+  }
+  select:focus, input:focus{outline:2px solid var(--gold);outline-offset:1px;}
+
+  .predict-btn{
+    margin-top:8px;
+    width:100%;
+    background:var(--gold);
+    color:#231A08;
+    border:none;
+    padding:13px;
+    border-radius:7px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .predict-btn:hover{background:var(--gold-bright);}
+
+  /* --- Decision slip --- */
+  .slip{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:10px;
+    padding:26px 26px 22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .slip::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image: repeating-linear-gradient(transparent, transparent 27px, var(--paper-line) 28px);
+    opacity:0.5; pointer-events:none;
+  }
+  .slip-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:1.5px solid var(--ink);
+    padding-bottom:10px; margin-bottom:16px; position:relative;
+  }
+  .slip-head h2{
+    font-family:'Source Serif 4',Georgia,serif;
+    font-size:19px; margin:0; font-weight:700;
+  }
+  .slip-id{font-size:12px;color:#66604E;}
+
+  .empty-state{color:#7A7462;font-size:14px;line-height:1.6;position:relative;padding:10px 0 20px;}
+
+  .verdict-row{display:flex;align-items:center;gap:16px;margin:6px 0 18px;position:relative;}
+  .stamp{
+    font-family:'Source Serif 4',Georgia,serif;
+    font-weight:700;
+    font-size:22px;
+    padding:8px 16px;
+    border:3px solid currentColor;
+    border-radius:6px;
+    transform:rotate(-4deg);
+    letter-spacing:0.03em;
+  }
+  .stamp.approved{color:var(--green);}
+  .stamp.rejected{color:var(--red);}
+
+  .prob-line{position:relative;}
+  .prob-label{display:flex;justify-content:space-between;font-size:12.5px;color:#66604E;margin-bottom:5px;}
+  .prob-track{background:#E4DCC5;border-radius:5px;height:12px;overflow:hidden;}
+  .prob-fill{height:100%;border-radius:5px;transition:width .4s ease;}
+
+  .factors{margin-top:20px;position:relative;}
+  .factors h3{font-size:13px;text-transform:none;color:#4A4534;margin:0 0 10px;font-weight:600;}
+  .factor-row{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;border-bottom:1px dashed var(--paper-line);}
+  .factor-row:last-child{border-bottom:none;}
+  .factor-val.pos{color:var(--green);font-weight:600;}
+  .factor-val.neg{color:var(--red);font-weight:600;}
+
+  .compare-box{
+    margin-top:18px;
+    background:#EFE8D4;
+    border-left:4px solid var(--gold);
+    padding:10px 14px;
+    font-size:13px;
+    position:relative;
+    border-radius:0 6px 6px 0;
+  }
+  .compare-box b{font-weight:700;}
+  .match{color:var(--green);font-weight:600;}
+  .mismatch{color:var(--red);font-weight:600;}
+
+  footer{margin-top:34px;color:var(--muted);font-size:12.5px;line-height:1.6;border-top:1px solid var(--navy-800);padding-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Project Phase 7 — Loan Approval Prediction</div>
+    <h1>Loan Approval Desk</h1>
+    <p class="sub">Enter an applicant's details below and the trained Logistic Regression model will return a predicted approval probability and decision — the same model evaluated in Phase 6, running live in your browser.</p>
+
+    <div class="samples" id="samples"></div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Applicant Information</h2>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="gender">Gender</label>
+          <select id="gender"><option value="1">Male</option><option value="0">Female</option></select>
+        </div>
+        <div class="field">
+          <label for="married">Married</label>
+          <select id="married"><option value="1">Yes</option><option value="0">No</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="dependents">Dependents</label>
+          <select id="dependents">
+            <option value="0">0</option><option value="1">1</option>
+            <option value="2">2</option><option value="3">3+</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="education">Education</label>
+          <select id="education"><option value="1">Graduate</option><option value="0">Not Graduate</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="selfEmployed">Self Employed</label>
+          <select id="selfEmployed"><option value="0">No</option><option value="1">Yes</option></select>
+        </div>
+        <div class="field">
+          <label for="creditHistory">Credit History</label>
+          <select id="creditHistory"><option value="1">Good (meets guidelines)</option><option value="0">Bad (does not meet guidelines)</option></select>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="applicantIncome">Applicant Income (monthly)</label>
+          <input type="number" id="applicantIncome" value="4500" min="0">
+        </div>
+        <div class="field">
+          <label for="coapplicantIncome">Co-applicant Income</label>
+          <input type="number" id="coapplicantIncome" value="0" min="0">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="loanAmount">Loan Amount (in thousands)</label>
+          <input type="number" id="loanAmount" value="128" min="0">
+        </div>
+        <div class="field">
+          <label for="loanTerm">Loan Term (months)</label>
+          <input type="number" id="loanTerm" value="360" min="0">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field full">
+          <label for="propertyArea">Property Area</label>
+          <select id="propertyArea">
+            <option value="Urban">Urban</option>
+            <option value="Semiurban">Semiurban</option>
+            <option value="Rural">Rural</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="predict-btn" onclick="runPrediction()">Predict Loan Approval</button>
+    </div>
+
+    <div class="slip" id="slip">
+      <div class="slip-head">
+        <h2>Decision Slip</h2>
+        <div class="slip-id" id="slipId">No prediction yet</div>
+      </div>
+      <div class="empty-state" id="emptyState">
+        Fill in the applicant's information and click <b>"Predict Loan Approval"</b>, or choose one of the sample applicants above to see a result here — including the probability, the predicted decision, and which factors influenced it most.
+      </div>
+      <div id="resultBody" style="display:none; position:relative;">
+        <div class="verdict-row">
+          <div class="stamp" id="stampEl">APPROVED</div>
+          <div style="font-size:13px;color:#66604E;">Predicted class</div>
+        </div>
+        <div class="prob-line">
+          <div class="prob-label"><span>Predicted probability of approval</span><span id="probText">0%</span></div>
+          <div class="prob-track"><div class="prob-fill" id="probFill" style="width:0%;background:#2E7D5B;"></div></div>
+        </div>
+        <div class="factors">
+          <h3>Top factors in this decision</h3>
+          <div id="factorList"></div>
+        </div>
+        <div class="compare-box" id="compareBox" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Model: Logistic Regression, trained on 491 applications (Phase 5), evaluated on a 123-application held-out test set (Phase 6) — 85.4% accuracy, 0.854 ROC-AUC. Prediction here is computed client-side using the exact trained coefficients, intercept, and scaler values, so results match the Python model exactly.
+  </footer>
+</div>
+
+<script>
+const MODEL = {
+  feature_order: ["Gender","Married","Dependents","Education","Self_Employed","Loan_Amount_Term","Credit_History","LoanAmount_log","TotalIncome_log","Property_Area_Semiurban","Property_Area_Urban"],
+  scaler_mean: [0.8228105906313645,0.6537678207739308,0.7494908350305499,0.7718940936863544,0.13441955193482688,341.74338085539716,0.8635437881873728,4.86954654887553,8.67802731590134,0.37474541751527496,0.329938900203666],
+  scaler_scale: [0.38182891794130724,0.4757682810932611,1.0012084070541567,0.41961125082446954,0.341102530029414,65.04160764484553,0.3432723613551995,0.4944640917855741,0.5428000873100269,0.4840571139510061,0.470190623402957],
+  coef: [-0.06885608236912105,0.27517130198586404,0.08674099879214289,0.1766995907875504,-0.07259459838742656,0.016771672848335306,1.2315220482389106,-0.04410556763153581,-0.02188819523173053,0.36024736137962393,0.04951262333645548],
+  intercept: 0.8290324148313907
+};
+
+const FACTOR_LABELS = {
+  "Gender":"Gender",
+  "Married":"Marital status",
+  "Dependents":"Number of dependents",
+  "Education":"Education level",
+  "Self_Employed":"Self-employment",
+  "Loan_Amount_Term":"Loan term",
+  "Credit_History":"Credit history",
+  "LoanAmount_log":"Loan amount",
+  "TotalIncome_log":"Total income",
+  "Property_Area_Semiurban":"Semiurban property area",
+  "Property_Area_Urban":"Urban property area"
+};
+
+const SAMPLES = [
+  {id:"LP001528", gender:1, married:0, dependents:0, education:1, selfEmployed:0, applicantIncome:6277, coapplicantIncome:0, loanAmount:118, loanTerm:360, creditHistory:0, propertyArea:"Rural", actual:"Rejected"},
+  {id:"LP002804", gender:0, married:1, dependents:0, education:1, selfEmployed:0, applicantIncome:4180, coapplicantIncome:2306, loanAmount:182, loanTerm:360, creditHistory:1, propertyArea:"Semiurban", actual:"Approved"},
+  {id:"LP002945", gender:1, married:1, dependents:0, education:1, selfEmployed:1, applicantIncome:9963, coapplicantIncome:0, loanAmount:180, loanTerm:360, creditHistory:1, propertyArea:"Rural", actual:"Approved"},
+  {id:"LP001784", gender:1, married:1, dependents:1, education:1, selfEmployed:0, applicantIncome:5500, coapplicantIncome:1260, loanAmount:170, loanTerm:360, creditHistory:1, propertyArea:"Rural", actual:"Approved"},
+  {id:"LP001514", gender:0, married:1, dependents:0, education:1, selfEmployed:0, applicantIncome:2330, coapplicantIncome:4486, loanAmount:100, loanTerm:360, creditHistory:1, propertyArea:"Semiurban", actual:"Approved"},
+  {id:"LP001656", gender:1, married:0, dependents:0, education:1, selfEmployed:0, applicantIncome:12000, coapplicantIncome:0, loanAmount:164, loanTerm:360, creditHistory:1, propertyArea:"Semiurban", actual:"Rejected"},
+  {id:"LP002795", gender:1, married:1, dependents:3, education:1, selfEmployed:1, applicantIncome:10139, coapplicantIncome:0, loanAmount:260, loanTerm:360, creditHistory:1, propertyArea:"Semiurban", actual:"Approved"},
+  {id:"LP002515", gender:1, married:1, dependents:1, education:1, selfEmployed:1, applicantIncome:3450, coapplicantIncome:2079, loanAmount:162, loanTerm:360, creditHistory:1, propertyArea:"Semiurban", actual:"Approved"},
+];
+
+let currentExpected = null;
+
+function buildSamples(){
+  const wrap = document.getElementById('samples');
+  SAMPLES.forEach((s, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'sample-chip';
+    const tagClass = s.actual === 'Approved' ? 'appr' : 'rej';
+    chip.innerHTML = `Test case ${idx+1} <span class="tag ${tagClass}">Actual: ${s.actual}</span>`;
+    chip.onclick = () => loadSample(idx);
+    wrap.appendChild(chip);
+  });
+}
+
+function loadSample(idx){
+  const s = SAMPLES[idx];
+  document.getElementById('gender').value = s.gender;
+  document.getElementById('married').value = s.married;
+  document.getElementById('dependents').value = s.dependents;
+  document.getElementById('education').value = s.education;
+  document.getElementById('selfEmployed').value = s.selfEmployed;
+  document.getElementById('creditHistory').value = s.creditHistory;
+  document.getElementById('applicantIncome').value = s.applicantIncome;
+  document.getElementById('coapplicantIncome').value = s.coapplicantIncome;
+  document.getElementById('loanAmount').value = s.loanAmount;
+  document.getElementById('loanTerm').value = s.loanTerm;
+  document.getElementById('propertyArea').value = s.propertyArea;
+  currentExpected = {id: s.id, actual: s.actual};
+  runPrediction();
+}
+
+function runPrediction(){
+  const gender = Number(document.getElementById('gender').value);
+  const married = Number(document.getElementById('married').value);
+  const dependents = Number(document.getElementById('dependents').value);
+  const education = Number(document.getElementById('education').value);
+  const selfEmployed = Number(document.getElementById('selfEmployed').value);
+  const creditHistory = Number(document.getElementById('creditHistory').value);
+  const applicantIncome = Number(document.getElementById('applicantIncome').value) || 0;
+  const coapplicantIncome = Number(document.getElementById('coapplicantIncome').value) || 0;
+  const loanAmount = Number(document.getElementById('loanAmount').value) || 0;
+  const loanTerm = Number(document.getElementById('loanTerm').value) || 0;
+  const propertyArea = document.getElementById('propertyArea').value;
+
+  const totalIncome = applicantIncome + coapplicantIncome;
+  const loanAmountLog = Math.log1p(loanAmount);
+  const totalIncomeLog = Math.log1p(totalIncome);
+  const propSemi = propertyArea === 'Semiurban' ? 1 : 0;
+  const propUrban = propertyArea === 'Urban' ? 1 : 0;
+
+  const raw = [gender, married, dependents, education, selfEmployed, loanTerm, creditHistory,
+               loanAmountLog, totalIncomeLog, propSemi, propUrban];
+
+  let z = MODEL.intercept;
+  const contributions = [];
+  for(let i=0;i<raw.length;i++){
+    const scaled = (raw[i] - MODEL.scaler_mean[i]) / MODEL.scaler_scale[i];
+    const contribution = MODEL.coef[i] * scaled;
+    z += contribution;
+    contributions.push({name: MODEL.feature_order[i], contribution});
+  }
+  const proba = 1 / (1 + Math.exp(-z));
+  const predictedClass = proba >= 0.5 ? 'Approved' : 'Rejected';
+
+  renderResult(proba, predictedClass, contributions);
+}
+
+function renderResult(proba, predictedClass, contributions){
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultBody').style.display = 'block';
+
+  const pct = (proba*100).toFixed(1);
+  document.getElementById('probText').textContent = pct + '%';
+  const fill = document.getElementById('probFill');
+  fill.style.width = pct + '%';
+  fill.style.background = predictedClass === 'Approved' ? '#2E7D5B' : '#B0473B';
+
+  const stamp = document.getElementById('stampEl');
+  stamp.textContent = predictedClass.toUpperCase();
+  stamp.className = 'stamp ' + (predictedClass === 'Approved' ? 'approved' : 'rejected');
+
+  document.getElementById('slipId').textContent = currentExpected ? ('Applicant ' + currentExpected.id) : ('Manual entry · ' + new Date().toLocaleTimeString());
+
+  // Top 4 factors by absolute contribution
+  const sorted = [...contributions].sort((a,b) => Math.abs(b.contribution) - Math.abs(a.contribution)).slice(0,4);
+  const listEl = document.getElementById('factorList');
+  listEl.innerHTML = '';
+  sorted.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'factor-row';
+    const dir = f.contribution >= 0 ? 'pos' : 'neg';
+    const arrow = f.contribution >= 0 ? '\u2191 increases approval' : '\u2193 decreases approval';
+    row.innerHTML = `<span>${FACTOR_LABELS[f.name]}</span><span class="factor-val ${dir}">${arrow}</span>`;
+    listEl.appendChild(row);
+  });
+
+  const compareBox = document.getElementById('compareBox');
+  if(currentExpected){
+    const matches = currentExpected.actual === predictedClass;
+    compareBox.style.display = 'block';
+    compareBox.innerHTML = `<b>Expected outcome (actual historical record):</b> ${currentExpected.actual} &nbsp;|&nbsp; <span class="${matches?'match':'mismatch'}">${matches ? 'Model matched the actual outcome \u2713' : 'Model did not match the actual outcome \u2717'}</span>`;
+  } else {
+    compareBox.style.display = 'none';
+  }
+}
+
+buildSamples();
+</script>
+</body>
+</html>
